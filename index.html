@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GéoClimat Explorer — Cartographie & Changement Climatique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0B0F0E;
+  --surface:#111715;
+  --surface2:#161E1B;
+  --surface3:#1C2622;
+  --border:rgba(255,255,255,0.07);
+  --border2:rgba(255,255,255,0.12);
+  --text:#E8EDE9;
+  --text-muted:#8FA696;
+  --text-faint:#4D6358;
+  --accent:#2FD97F;
+  --accent-dim:#1A7A47;
+  --accent-bg:rgba(47,217,127,0.08);
+  --accent-bg2:rgba(47,217,127,0.14);
+  --r:10px;--r-sm:7px;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:10px}
+
+/* HEADER */
+.hdr{
+  background:rgba(11,15,14,0.85);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 2rem;
+  height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:200;
+}
+.hdr-logo{display:flex;align-items:center;gap:10px}
+.hdr-icon{
+  width:34px;height:34px;border-radius:9px;
+  background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  color:#0B0F0E;font-size:17px;
+}
+.hdr-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:600;letter-spacing:-0.01em;color:var(--text)}
+.hdr-sub{font-size:11px;color:var(--text-faint);margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:10px}
+.hdr-badge{
+  font-size:11px;padding:4px 10px;border-radius:20px;
+  border:1px solid var(--border2);color:var(--text-muted);
+  font-family:'JetBrains Mono',monospace;
+}
+.hdr-count{
+  font-size:12px;padding:4px 12px;border-radius:20px;
+  background:var(--accent-bg);border:1px solid var(--accent-dim);
+  color:var(--accent);font-family:'JetBrains Mono',monospace;font-weight:500;
+}
+
+/* LAYOUT */
+.wrap{display:flex;max-width:1440px;margin:0 auto;padding:1.5rem;gap:1.5rem;align-items:flex-start}
+
+/* SIDEBAR */
+.sb{width:240px;flex-shrink:0;position:sticky;top:76px;max-height:calc(100vh - 100px);overflow-y:auto}
+.sb-sec{margin-bottom:1.5rem}
+.sb-lbl{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;padding:0 6px}
+.db-btn{
+  display:flex;align-items:center;gap:9px;
+  width:100%;padding:8px 10px;border-radius:var(--r-sm);
+  border:none;background:transparent;cursor:pointer;
+  font-family:'Inter',sans-serif;font-size:13px;color:var(--text-muted);
+  text-align:left;transition:all 0.15s;margin-bottom:2px;
+}
+.db-btn:hover{background:var(--surface2);color:var(--text)}
+.db-btn.active{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-dim) !important}
+.db-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.db-type{font-size:9px;margin-left:auto;padding:1px 5px;border-radius:4px;font-family:'JetBrains Mono',monospace}
+.db-type.open{background:rgba(47,217,127,0.12);color:var(--accent)}
+.db-type.pay{background:rgba(255,160,80,0.12);color:#FFA050}
+.db-reset{
+  display:flex;align-items:center;gap:7px;width:100%;
+  padding:7px 10px;border-radius:var(--r-sm);
+  border:1px dashed var(--border2);background:transparent;
+  cursor:pointer;font-family:'Inter',sans-serif;font-size:12px;color:var(--text-faint);
+  transition:all 0.15s;margin-top:6px;
+}
+.db-reset:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+
+.stats-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:1rem}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)}
+.stat-row:last-child{border-bottom:none}
+.stat-lbl{font-size:12px;color:var(--text-faint)}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent);font-weight:500}
+
+/* MAIN */
+.main{flex:1;min-width:0}
+
+/* FILTERS */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem}
+.f-btn{
+  padding:7px 14px;border-radius:20px;
+  border:1px solid var(--border2);background:transparent;
+  font-family:'Inter',sans-serif;font-size:12px;font-weight:400;
+  color:var(--text-muted);cursor:pointer;transition:all 0.15s;
+  display:flex;align-items:center;gap:6px;
+}
+.f-btn i{font-size:14px}
+.f-btn:hover{border-color:var(--accent);color:var(--accent)}
+.f-btn.active{background:var(--accent);color:#0B0F0E;border-color:var(--accent);font-weight:600}
+.f-btn.active i{color:#0B0F0E}
+
+/* SECTION HDR */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.sec-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:500;color:var(--text-muted)}
+.sec-badge{font-family:'JetBrains Mono',monospace;font-size:11px;padding:3px 9px;background:var(--surface2);border-radius:10px;color:var(--text-faint)}
+
+/* CARDS GRID */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;margin-bottom:1.5rem}
+
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:1rem 1.1rem;
+  cursor:pointer;transition:all 0.18s;
+  display:flex;flex-direction:column;gap:0;
+}
+.card:hover{border-color:var(--accent-dim);background:var(--surface2);transform:translateY(-1px)}
+.card.sel{border-color:var(--accent);border-width:1px;background:var(--surface2);box-shadow:0 0 0 3px rgba(47,217,127,0.08)}
+.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.card-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.card-badges{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.badge{font-size:10px;font-weight:500;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.open-badge{background:rgba(47,217,127,0.1);color:#2FD97F;border:1px solid rgba(47,217,127,0.2)}
+.pay-badge{background:rgba(255,160,80,0.1);color:#FFA050;border:1px solid rgba(255,160,80,0.2)}
+.mixed-badge{background:rgba(120,160,255,0.1);color:#78A0FF;border:1px solid rgba(120,160,255,0.2)}
+.card-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:600;color:var(--text);margin-bottom:5px;line-height:1.3}
+.card-desc{font-size:12px;color:var(--text-faint);line-height:1.55;flex:1}
+.card-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px}
+.card-tag{font-size:10px;padding:2px 7px;border-radius:8px;background:var(--surface3);color:var(--text-faint);border:1px solid var(--border)}
+.card-domain{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:500}
+
+/* DETAIL */
+.detail{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;
+  animation:fadeUp 0.2s ease;margin-top:0.5rem;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.detail-hdr{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;gap:14px;align-items:flex-start}
+.detail-ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.detail-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:600;margin-bottom:3px;color:var(--text)}
+.detail-sub{font-size:12px;color:var(--text-faint)}
+.detail-body{padding:1.25rem 1.5rem;display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+@media(max-width:900px){.detail-body{grid-template-columns:1fr}}
+.detail-col{}
+.detail-lbl{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.detail-text{font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:1rem}
+.why-box{
+  background:var(--accent-bg);border:1px solid var(--accent-dim);
+  border-radius:var(--r-sm);padding:0.9rem 1rem;margin-bottom:1rem;
+}
+.why-box .detail-lbl{color:var(--accent)}
+.why-text{font-size:13px;color:var(--text);line-height:1.7}
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:1rem}
+.chip{
+  font-size:11px;padding:4px 10px;
+  background:var(--surface3);color:var(--text-muted);
+  border:1px solid var(--border2);border-radius:16px;
+  display:flex;align-items:center;gap:5px;
+}
+.chip i{font-size:12px;color:var(--text-faint)}
+.src-item{
+  display:flex;align-items:flex-start;gap:8px;
+  padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;
+}
+.src-item:last-child{border-bottom:none}
+.src-name{color:var(--text);font-weight:500;flex:1}
+.src-meta{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.src-cost{font-size:10px;padding:1px 6px;border-radius:6px}
+.src-url{font-size:10px;color:var(--accent);text-decoration:none;font-family:'JetBrains Mono',monospace}
+.src-url:hover{text-decoration:underline}
+.detail-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:8px;align-items:center}
+.btn-p{
+  padding:8px 16px;border-radius:var(--r-sm);
+  background:var(--accent);color:#0B0F0E;
+  border:none;cursor:pointer;
+  font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
+  display:flex;align-items:center;gap:6px;transition:opacity 0.15s;
+}
+.btn-p:hover{opacity:0.85}
+.btn-s{
+  padding:8px 14px;border-radius:var(--r-sm);
+  background:transparent;color:var(--text-muted);
+  border:1px solid var(--border2);cursor:pointer;
+  font-family:'Inter',sans-serif;font-size:13px;
+  display:flex;align-items:center;gap:6px;transition:all 0.15s;
+}
+.btn-s:hover{background:var(--surface2);color:var(--text)}
+.empty{text-align:center;padding:3rem 1rem;color:var(--text-faint);grid-column:1/-1}
+.empty i{font-size:38px;display:block;margin-bottom:12px;opacity:0.3}
+.empty p{font-size:14px}
+footer{text-align:center;padding:2rem;font-size:12px;color:var(--text-faint);border-top:1px solid var(--border);margin-top:2rem}
+footer a{color:var(--accent);text-decoration:none}
+@media(max-width:900px){
+  .wrap{flex-direction:column;padding:1rem}
+  .sb{width:100%;position:static;max-height:none}
+  .hdr{padding:0 1rem}
+  .hdr-sub{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-logo">
+    <div class="hdr-icon"><i class="ti ti-map-2"></i></div>
+    <div>
+      <div class="hdr-title">GéoClimat Explorer</div>
+      <div class="hdr-sub">Croisements géographiques · Changement climatique · France</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-badge" id="hdr-count">35 productions</span>
+    <span class="hdr-badge">🇫🇷 France</span>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- SIDEBAR -->
+  <aside class="sb">
+    <div class="sb-sec">
+      <div class="sb-lbl">Bases de données</div>
+      <button class="db-btn" onclick="setDb('meteofrance',this)"><div class="db-dot" style="background:#2FD97F"></div>Météo-France<span class="db-type open">open</span></button>
+      <button class="db-btn" onclick="setDb('ign',this)"><div class="db-dot" style="background:#4A9EFF"></div>IGN / BD TOPO<span class="db-type open">open</span></button>
+      <button class="db-btn" onclick="setDb('corine',this)"><div class="db-dot" style="background:#7ECB3C"></div>Corine Land Cover<span class="db-type open">open</span></button>
+      <button class="db-btn" onclick="setDb('insee',this)"><div class="db-dot" style="background:#FFC44D"></div>INSEE<span class="db-type open">open</span></button>
+      <button class="db-btn" onclick="setDb('georisques',this)"><div class="db-dot" style="background:#FF5C5C"></div>GéoRisques / BRGM<span class="db-type open">open</span></button>
+      <button class="db-btn" onclick="setDb('copernicus',this)"><div class="db-dot" style="background:#A06FFF"></div>Copernicus<span class="db-type open">open</span></button>
+      <button class="db-btn" onclick="setDb('sandre',this)"><div class="db-dot" style="background:#30C0E0"></div>SANDRE / Eau<span class="db-type open">open</span></button>
+      <button class="db-btn" onclick="setDb('ademe',this)"><div class="db-dot" style="background:#FF9030"></div>ADEME<span class="db-type open">open</span></button>
+      <button class="db-btn" onclick="setDb('sncf',this)"><div class="db-dot" style="background:#FF4488"></div>SNCF Open Data<span class="db-type open">open</span></button>
+      <button class="db-btn" onclick="setDb('airparif',this)"><div class="db-dot" style="background:#C0E050"></div>Airparif / AtmoFr<span class="db-type open">open</span></button>
+      <button class="db-btn" onclick="setDb('rpg',this)"><div class="db-dot" style="background:#8BE0A0"></div>RPG / ASP<span class="db-type open">open</span></button>
+      <button class="db-btn" onclick="setDb('sante',this)"><div class="db-dot" style="background:#FF7090"></div>Santé Publique Fr<span class="db-type open">open</span></button>
+      <button class="db-btn" onclick="setDb('enedis',this)"><div class="db-dot" style="background:#FFDD50"></div>Enedis / RTE<span class="db-type open">open</span></button>
+      <button class="db-btn" onclick="setDb('planet',this)"><div class="db-dot" style="background:#FF8C30"></div>Planet / Maxar<span class="db-type pay">payant</span></button>
+      <button class="db-btn" onclick="setDb('lidar',this)"><div class="db-dot" style="background:#60D0FF"></div>LiDAR HD IGN<span class="db-type open">open</span></button>
+      <button class="db-reset" onclick="resetDb()"><i class="ti ti-refresh" style="font-size:13px"></i>Tout afficher</button>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-lbl">Statistiques</div>
+      <div class="stats-box">
+        <div class="stat-row"><span class="stat-lbl">Total productions</span><span class="stat-val" id="s-total">35</span></div>
+        <div class="stat-row"><span class="stat-lbl">Affichées</span><span class="stat-val" id="s-shown">35</span></div>
+        <div class="stat-row"><span class="stat-lbl">Domaines</span><span class="stat-val">9</span></div>
+        <div class="stat-row"><span class="stat-lbl">Bases sources</span><span class="stat-val">15</span></div>
+        <div class="stat-row"><span class="stat-lbl">Open data</span><span class="stat-val">93%</span></div>
+      </div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-lbl">Légende coût données</div>
+      <div style="display:flex;flex-direction:column;gap:5px;padding:0 4px">
+        <span style="font-size:11px;color:var(--text-faint);display:flex;align-items:center;gap:7px"><span class="open-badge badge">open</span> Données libres / gratuites</span>
+        <span style="font-size:11px;color:var(--text-faint);display:flex;align-items:center;gap:7px"><span class="pay-badge badge">payant</span> Données commerciales</span>
+        <span style="font-size:11px;color:var(--text-faint);display:flex;align-items:center;gap:7px"><span class="mixed-badge badge">mixte</span> Gratuit + options payantes</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="filters" id="filters">
+      <button class="f-btn active" onclick="setFilter('all',this)"><i class="ti ti-layout-grid"></i>Tout (35)</button>
+      <button class="f-btn" onclick="setFilter('eau',this)"><i class="ti ti-droplet"></i>Eau</button>
+      <button class="f-btn" onclick="setFilter('transport',this)"><i class="ti ti-car"></i>Transport</button>
+      <button class="f-btn" onclick="setFilter('agriculture',this)"><i class="ti ti-plant-2"></i>Agriculture</button>
+      <button class="f-btn" onclick="setFilter('sante',this)"><i class="ti ti-heart-rate-monitor"></i>Santé</button>
+      <button class="f-btn" onclick="setFilter('energie',this)"><i class="ti ti-bolt"></i>Énergie</button>
+      <button class="f-btn" onclick="setFilter('risque',this)"><i class="ti ti-alert-triangle"></i>Risques</button>
+      <button class="f-btn" onclick="setFilter('biodiversite',this)"><i class="ti ti-leaf"></i>Biodiversité</button>
+      <button class="f-btn" onclick="setFilter('urbain',this)"><i class="ti ti-building"></i>Urbain</button>
+      <button class="f-btn" onclick="setFilter('foret',this)"><i class="ti ti-trees"></i>Forêt</button>
+    </div>
+
+    <div class="sec-hdr">
+      <span class="sec-title" id="sec-title">Toutes les productions cartographiques</span>
+      <span class="sec-badge" id="sec-badge">35 cartes</span>
+    </div>
+
+    <div class="grid" id="grid"></div>
+    <div id="detail"></div>
+  </main>
+</div>
+
+<footer>
+  GéoClimat Explorer &nbsp;·&nbsp;
+  <a href="https://www.georisques.gouv.fr" target="_blank">GéoRisques</a> &nbsp;·&nbsp;
+  <a href="https://geoservices.ign.fr" target="_blank">IGN</a> &nbsp;·&nbsp;
+  <a href="https://www.data.gouv.fr" target="_blank">data.gouv.fr</a> &nbsp;·&nbsp;
+  <a href="https://www.sandre.eaufrance.fr" target="_blank">SANDRE</a>
+</footer>
+
+<script>
+const DB_LABELS={meteofrance:'Météo-France',ign:'IGN',corine:'Corine LC',insee:'INSEE',georisques:'GéoRisques',copernicus:'Copernicus',sandre:'SANDRE',ademe:'ADEME',sncf:'SNCF',airparif:'Airparif',rpg:'RPG',sante:'SPF',enedis:'Enedis',planet:'Planet',lidar:'LiDAR HD'};
+const DOM_COLORS={eau:'#30C0E0',transport:'#FF8C30',agriculture:'#7ECB3C',sante:'#FF7090',energie:'#FFDD50',risque:'#FF5C5C',biodiversite:'#8BE0A0',urbain:'#A06FFF',foret:'#4CAF70'};
+const DOM_BG={eau:'rgba(48,192,224,0.12)',transport:'rgba(255,140,48,0.12)',agriculture:'rgba(126,203,60,0.12)',sante:'rgba(255,112,144,0.12)',energie:'rgba(255,221,80,0.12)',risque:'rgba(255,92,92,0.12)',biodiversite:'rgba(139,224,160,0.12)',urbain:'rgba(160,111,255,0.12)',foret:'rgba(76,175,112,0.12)'};
+const DOM_LABELS={eau:'Eau',transport:'Transport',agriculture:'Agriculture',sante:'Santé',energie:'Énergie',risque:'Risques',biodiversite:'Biodiversité',urbain:'Urbain',foret:'Forêt'};
+
+const DATA=[
+// ===== EAU =====
+{id:1,cat:'eau',name:'Vulnérabilité des nappes phréatiques',desc:'Niveaux piézométriques × déficits pluviométriques × prélèvements agricoles',icon:'ti-ripple',dbs:['sandre','meteofrance','rpg'],cost:'open',
+why:'Les nappes alimentent 2/3 de l\'eau potable en France. Croiser les mesures piézométriques BEPH (SANDRE) avec les anomalies de précipitations sur 30 ans et les volumes prélevés par secteur permet de cartographier les aquifères en tension. Cela aide à anticiper les restrictions d\'usage et planifier les substitutions.',
+detail:'Superposition des courbes d\'évolution des niveaux de nappes (réseau BEPH, +3000 points) avec les isohyètes d\'anomalie pluviométrique Météo-France et les volumes déclarés dans le registre des usages (BNPE). Résultat : indice de pression par unité hydrogéologique.',
+methodes:['Interpolation piézométrique','Krigeage ordinaire','Jointure temporelle','QGIS + Python'],
+sources:[{n:'Base de données des Eaux Souterraines (BEPH)',c:'open',u:'https://ades.eaufrance.fr'},{n:'Données climatiques normales Météo-France',c:'open',u:'https://meteo.data.gouv.fr'},{n:'BNPE — prélèvements eau',c:'open',u:'https://bnpe.eaufrance.fr'}]},
+
+{id:2,cat:'eau',name:'Qualité des cours d\'eau & agriculture',desc:'Indices de qualité (nitrates, pesticides) × occupation agricole du bassin versant',icon:'ti-droplet-half',dbs:['sandre','rpg','corine'],cost:'open',
+why:'Les nitrates et pesticides d\'origine agricole dégradent la qualité de l\'eau potable et des écosystèmes aquatiques. Ce croisement permet de relier les teneurs mesurées en stations à la nature des cultures du bassin versant amont, d\'identifier les cultures les plus polluantes et de prioriser les actions agro-environnementales.',
+detail:'Délimitation des bassins versants (BD Carthage IGN) puis croisement avec le RPG (Registre Parcellaire Graphique) pour calculer la part de chaque culture. Jointure avec les mesures de la DC (Directive Cadre Eau) sur les stations SANDRE. Modèle de régression spatiale pour identifier les liens cause-effet.',
+methodes:['Délimitation BV (QGIS)','Régression spatiale','Analyse de pression DCE','R + sf'],
+sources:[{n:'Réseau de mesure de la qualité des eaux (NAIADES)',c:'open',u:'https://naiades.eaufrance.fr'},{n:'Registre Parcellaire Graphique (RPG)',c:'open',u:'https://geoservices.ign.fr'},{n:'BD Carthage (réseau hydrographique)',c:'open',u:'https://sandre.eaufrance.fr'}]},
+
+{id:3,cat:'eau',name:'Zones humides & stockage de carbone',desc:'Cartographie des zones humides × flux de méthane × artificialisation',icon:'ti-wave-sine',dbs:['corine','copernicus','sandre'],cost:'open',
+why:'Les zones humides sont des puits de carbone majeurs mais aussi des sources de méthane. Face au drainage agricole et à l\'urbanisation, cartographier leur évolution et leur rôle dans le stockage/émission de GES est crucial pour les stratégies bas-carbone. La destruction d\'1 ha de tourbière peut libérer l\'équivalent de 2000 t CO₂.',
+detail:'Extraction des zones humides depuis Corine LC + CARMEN (INPN) et Sentinel-2 (indice MNDWI). Croisement avec les données d\'émissions de méthane (inventaire CITEPA) et le suivi de l\'artificialisation (Observatoire de l\'artificialisation). Modélisation des stocks carbone par type de milieu.',
+methodes:['Indice MNDWI (Sentinel-2)','Analyse multi-temporelle','Modèle stock carbone','Google Earth Engine'],
+sources:[{n:'CARMEN — Zones humides INPN',c:'open',u:'https://inpn.mnhn.fr'},{n:'Sentinel-2 MSI (Copernicus)',c:'open',u:'https://scihub.copernicus.eu'},{n:'Inventaire GES CITEPA',c:'open',u:'https://www.citepa.org'}]},
+
+{id:4,cat:'eau',name:'Sécheresse & conflits d\'usage',desc:'Étiages des cours d\'eau × besoins agricoles × prélèvements industriels',icon:'ti-wave-off',dbs:['sandre','rpg','meteofrance'],cost:'open',
+why:'Les épisodes de sécheresse 2019-2022 ont généré des crises de gouvernance de l\'eau inédites en France. Cartographier simultanément les niveaux d\'étiage, les volumes prélevés par secteur et les zones en arrêté de restriction permet de localiser spatialement les points de tension et d\'anticiper les conflits d\'usage futurs sous scénarios climatiques.',
+detail:'Croisement des débits HYDRO (minimum d\'étiage, VCN10) avec les volumes déclarés par secteur (agriculture, industrie, AEP) issus du BNPE. Projection sous scénarios DRIAS pour 2030-2050. Indice de tension eau par bassin versant élémentaire.',
+methodes:['Analyse fréquentielle débit','VCN10 / QMNA5','Scénarios DRIAS','HEC-RAS + QGIS'],
+sources:[{n:'Base HYDRO (débits)',c:'open',u:'https://hydro.eaufrance.fr'},{n:'DRIAS — projections climatiques',c:'open',u:'https://www.drias-eau.fr'},{n:'BNPE — prélèvements',c:'open',u:'https://bnpe.eaufrance.fr'}]},
+
+// ===== TRANSPORT =====
+{id:5,cat:'transport',name:'Vulnérabilité des routes aux inondations',desc:'Réseau routier × zones inondables × trafic et temps d\'accès aux services d\'urgence',icon:'ti-road-off',dbs:['ign','georisques','insee'],cost:'open',
+why:'Les crues perturbent des réseaux routiers critiques et isolent des populations, parfois des jours. Ce croisement permet d\'identifier les tronçons les plus stratégiques dont la coupure engendrerait les plus longues détours (accessibilité aux hôpitaux, pompiers) et de prioriser les travaux de protection ou de déviation.',
+detail:'Analyse d\'accessibilité (isochrones) depuis les hôpitaux et casernes sur le réseau BD TOPO IGN. Croisement avec les Atlas des zones inondables (AZI) pour identifier les tronçons submersibles. Simulation de la dégradation des temps de parcours lors d\'une crue centennale.',
+methodes:['Analyse réseau (pgRouting)','Isochrones','Simulation de coupure','QGIS + PostGIS'],
+sources:[{n:'BD TOPO IGN (réseau routier)',c:'open',u:'https://geoservices.ign.fr'},{n:'Atlas des Zones Inondables (AZI)',c:'open',u:'https://www.georisques.gouv.fr'},{n:'FINESS (localisation hôpitaux)',c:'open',u:'https://finess.sante.gouv.fr'}]},
+
+{id:6,cat:'transport',name:'Émissions CO₂ du transport routier',desc:'Trafic journalier (TMJA) × type de motorisation × densité urbaine / péri-urbaine',icon:'ti-car',dbs:['ign','ademe','insee'],cost:'open',
+why:'Le transport routier représente 31% des émissions françaises de CO₂. Spatialiser les émissions par tronçon permet d\'identifier les axes les plus émetteurs, d\'évaluer l\'impact de politiques (ZFE, électrification) et de cibler les zones où un report modal serait le plus bénéfique pour le climat et la qualité de l\'air.',
+detail:'Croisement du trafic moyen journalier annuel (TMJA, BD TOPO / CEREMA) avec les facteurs d\'émission par type de véhicule (ADEME HBEFA) et la composition du parc (SDES). Calcul des émissions par tronçon en kgCO₂/km/an. Agrégation communale et par bassin d\'air.',
+methodes:['Calcul émissions HBEFA','Jointure linéaire','Agrégation spatiale','Python + GeoPandas'],
+sources:[{n:'Trafic routier TMJA (CEREMA)',c:'open',u:'https://www.cerema.fr'},{n:'Facteurs émission ADEME (Base Empreinte)',c:'open',u:'https://base-empreinte.ademe.fr'},{n:'Parc automobile SDES',c:'open',u:'https://www.statistiques.developpement-durable.gouv.fr'}]},
+
+{id:7,cat:'transport',name:'Résilience ferroviaire face aux aléas',desc:'Réseau SNCF × événements climatiques extrêmes (crues, canicules, tempêtes)',icon:'ti-train',dbs:['sncf','meteofrance','georisques'],cost:'open',
+why:'En 2023, les perturbations climatiques ont causé 45 000 trains retardés ou annulés sur le réseau SNCF. Cartographier la co-localisation des voies avec les zones à risque (inondation, mouvements de terrain, suréchauffement des rails) permet de prioriser les investissements de résilience et de planifier les déviations.',
+detail:'Croisement du tracé des lignes SNCF (Open Data SNCF) avec les aléas naturels géoréférencés : zones inondables (AZI), mouvements de terrain (BRGM), zones de suréchauffement rails (température max Météo-France). Indice de vulnérabilité par tronçon pondéré par le trafic voyageurs.',
+methodes:['Buffer linéaire','Jointure spatiale multi-aléas','Pondération trafic','QGIS'],
+sources:[{n:'Réseau ferré national (Open Data SNCF)',c:'open',u:'https://data.sncf.com'},{n:'Données climatiques extrêmes Météo-France',c:'open',u:'https://meteo.data.gouv.fr'},{n:'BRGM — mouvements de terrain',c:'open',u:'https://www.georisques.gouv.fr'}]},
+
+{id:8,cat:'transport',name:'Report modal & qualité de l\'air',desc:'Accessibilité transports collectifs × niveaux PM2.5/NO₂ × densité population',icon:'ti-bus',dbs:['ign','airparif','insee'],cost:'open',
+why:'Remplacer la voiture individuelle par les TC dans les zones denses mal desservies permettrait une double co-bénéfice climatique et sanitaire. Ce croisement identifie les zones où la qualité de l\'air est mauvaise, la voiture dominante et les TC insuffisants : cibles prioritaires pour des investissements de mobilité durable.',
+detail:'Calcul de l\'accessibilité aux TC par isochrones piétons (15 min) depuis chaque IRIS. Croisement avec les concentrations NO₂/PM2.5 (AtmoFrance) et le taux de motorisation INSEE. Identification des zones à triple déficit : air pollué + faible offre TC + forte dépendance voiture.',
+methodes:['Isochrones GTFS','Overlay spatial','Analyse bi-variée','OpenTripPlanner + QGIS'],
+sources:[{n:'GTFS des AOT / transport.data.gouv.fr',c:'open',u:'https://transport.data.gouv.fr'},{n:'Concentrations polluants AtmoFrance',c:'open',u:'https://www.atmo-france.org'},{n:'Recensement INSEE taux motorisation',c:'open',u:'https://www.insee.fr'}]},
+
+// ===== AGRICULTURE =====
+{id:9,cat:'agriculture',name:'Stress hydrique des cultures (NDVI)',desc:'Anomalie NDVI Sentinel-2 × déficit pluviométrique × type de culture RPG',icon:'ti-plant-2',dbs:['copernicus','meteofrance','rpg'],cost:'open',
+why:'Les pertes agricoles liées à la sécheresse ont triplé en 20 ans en France. Corréler les anomalies du NDVI (Sentinel-2) avec les déficits hydriques permet d\'établir des cartes de vulnérabilité par type de culture et par territoire, essentielles pour adapter les aides PAC, les assurances récolte et les choix d\'irrigation.',
+detail:'Calcul de la moyenne NDVI mensuelle par parcelle RPG (Sentinel-2, résolution 10m). Comparaison à la normale 2015-2022. Croisement avec l\'indice d\'humidité du sol (SWI) Météo-France et les données pluviométriques station par station. Cartographie du stress hydrique par commune et par type de culture.',
+methodes:['Séries temporelles Sentinel-2','Anomalie NDVI','SWI Météo-France','Python + rasterio'],
+sources:[{n:'Sentinel-2 MSI (Copernicus / Theia)',c:'open',u:'https://www.theia-land.fr'},{n:'SWI — indice humidité sol Météo-France',c:'open',u:'https://meteo.data.gouv.fr'},{n:'RPG — Registre Parcellaire Graphique',c:'open',u:'https://geoservices.ign.fr'}]},
+
+{id:10,cat:'agriculture',name:'Déplacement des zones viticoles',desc:'Indices Huglin & Winkler × AOC/AOP × projections climatiques 2050',icon:'ti-seeding',dbs:['meteofrance','corine','ign'],cost:'open',
+why:'La vigne est l\'une des cultures les plus sensibles au climat. Les vendanges avancent de 2 semaines depuis les années 1980. Cartographier l\'évolution des zones bioclimatiques favorables à la vigne et les comparer aux délimitations AOC permet d\'anticiper les territoires gagnants/perdants et d\'informer les politiques d\'adaptation.',
+detail:'Calcul de l\'indice Huglin (somme thermique avril-octobre) à partir des séries Météo-France sur 1970-2024. Interpolation spatiale (krigeage) et projection sous DRIAS 2050. Superposition avec les délimitations AOC (INAO) et Corine LC (vignes 212). Cartographie des transitions.',
+methodes:['Krigeage climatique','Indice Huglin','Projection DRIAS','R + ggplot2 + sf'],
+sources:[{n:'Séries climatiques Météo-France (1950-)',c:'open',u:'https://meteo.data.gouv.fr'},{n:'Délimitations AOC/AOP INAO',c:'open',u:'https://www.inao.gouv.fr'},{n:'Projections DRIAS 2050',c:'open',u:'https://www.drias-climat.fr'}]},
+
+{id:11,cat:'agriculture',name:'Artificialisation des terres agricoles',desc:'Consommation de terres ENAF × qualité agronomique × pression urbaine',icon:'ti-building-factory',dbs:['ign','corine','insee'],cost:'open',
+why:'La France perd ~22 000 ha de terres agricoles par an. La loi ZAN (Zéro Artificialisation Nette) impose une réduction de 50% d\'ici 2031. Croiser les terres consommées (ENAF, Observatoire de l\'Artificialisation) avec la qualité agronomique (INRAE) et la pression démographique permet d\'identifier où les conflits terres agricoles/urbanisation sont les plus aigus.',
+detail:'Analyse bi-temporelle de la consommation ENAF (2011-2023) par commune. Croisement avec les indices de qualité des sols (INRAE — RMQS) et les projections démographiques INSEE. Cartographie des tensions entre impératifs de logement et préservation agricole.',
+methodes:['Analyse multi-temporelle','Scoring qualité sol','Prospective démographique','QGIS + Python'],
+sources:[{n:'Observatoire de l\'Artificialisation (ENAF)',c:'open',u:'https://artificialisation.biodiversite.gouv.fr'},{n:'RMQS — réseau mesure qualité sols (INRAE)',c:'open',u:'https://www.gissol.fr'},{n:'Projections démographiques INSEE',c:'open',u:'https://www.insee.fr'}]},
+
+// ===== SANTÉ =====
+{id:12,cat:'sante',name:'Îlots de chaleur urbains & mortalité',desc:'Land Surface Temperature × surmortalité estivale × population vulnérable',icon:'ti-temperature-plus',dbs:['copernicus','sante','insee'],cost:'open',
+why:'La canicule de 2003 a tué 15 000 personnes en France. Les ICU aggravent les effets des vagues de chaleur de 5-8°C supplémentaires. Croiser la température de surface avec la surmortalité par commune et la géographie des populations vulnérables (âge, isolement, logement) permet de cibler les politiques de prévention caniculaire et d\'adaptation urbaine.',
+detail:'Calcul de la LST (Land Surface Temperature) à partir de Sentinel-3 SLSTR. Croisement avec les données de surmortalité estivale (Santé Publique France, BDD certificats de décès) à l\'IRIS. Superposition avec les indicateurs de vulnérabilité : % 75 ans+, % isolés, DPE F/G (ADEME). Identification des zones à risque prioritaire.',
+methodes:['LST Sentinel-3','Analyse spatiale surmortalité','Indice vulnérabilité composite','Google Earth Engine'],
+sources:[{n:'Sentinel-3 SLSTR (Copernicus)',c:'open',u:'https://scihub.copernicus.eu'},{n:'Surmortalité Santé Publique France',c:'open',u:'https://www.santepubliquefrance.fr'},{n:'DPE ADEME par IRIS',c:'open',u:'https://data.ademe.fr'}]},
+
+{id:13,cat:'sante',name:'Maladies vectorielles & expansion du moustique-tigre',desc:'Aire de distribution Aedes albopictus × températures hivernales × densité humaine',icon:'ti-bug',dbs:['sante','meteofrance','insee'],cost:'open',
+why:'Le moustique-tigre (Aedes albopictus), vecteur de dengue et chikungunya, était absent de France il y a 20 ans. Il colonise aujourd\'hui 78 départements. Le changement climatique accélère cette expansion. Cartographier son avancée en lien avec les températures hivernales permet de modéliser les zones à risque émergent et orienter la surveillance sanitaire.',
+detail:'Croisement des signalements Moustique-tigre.fr (>50 000 pts) avec les isothermes hivernaux Météo-France (seuil de survie : > 0°C en janvier) et la densité de population. Modèle de niche écologique (MaxEnt) pour projeter l\'expansion sous DRIAS 2050.',
+methodes:['Modélisation niche écologique (MaxEnt)','Isothermes','Krigeage spatial','R + dismo'],
+sources:[{n:'Signalements moustique-tigre (DGS / ANSES)',c:'open',u:'https://signalement-moustique.fr'},{n:'Normales climatiques Météo-France',c:'open',u:'https://meteo.data.gouv.fr'},{n:'Recensement population INSEE',c:'open',u:'https://www.insee.fr'}]},
+
+{id:14,cat:'sante',name:'Allergies & pollinisation anticipée',desc:'Phénologie des pollens × températures printanières × données hospitalières',icon:'ti-flower',dbs:['meteofrance','sante','copernicus'],cost:'open',
+why:'Le changement climatique avance les saisons polliniques de 2 à 4 semaines et augmente les concentrations de pollen. 30% des Français souffrent de rhinite allergique. Croiser les données phénologiques avec les températures printanières et les admissions hospitalières permet d\'établir des cartes de risque allergique et d\'anticiper les périodes critiques.',
+detail:'Analyse des dates de début de floraison (réseau phénologique Météo-France + observatoires botaniques) en fonction des températures de mars-avril. Corrélation avec les données de consultations médicales pour rhinite/asthme (Sniiram, OSCOUR). Projection de l\'avancement des saisons sous scénarios climatiques.',
+methodes:['Analyse phénologique','Corrélation temp/santé','Cartographie temporelle','R + mgcv'],
+sources:[{n:'Réseau phénologique Météo-France',c:'open',u:'https://meteo.data.gouv.fr'},{n:'RNSA — Réseau national surveillance aérobiologique',c:'open',u:'https://www.pollens.fr'},{n:'OSCOUR — urgences hospitalières',c:'open',u:'https://www.santepubliquefrance.fr'}]},
+
+{id:15,cat:'sante',name:'Déserts médicaux & résilience sanitaire',desc:'Densité médecins × zones enclavées × projections démographiques vieillissement',icon:'ti-stethoscope',dbs:['sante','ign','insee'],cost:'open',
+why:'Les crises climatiques (inondations, canicules) génèrent des pics de besoins sanitaires. Les territoires déjà en désert médical sont doublement vulnérables. Cartographier l\'accessibilité aux soins en croisant la densité médicale (APL) avec l\'enclavement routier et le vieillissement projeté permet de prioriser les investissements en télémédecine et maisons de santé.',
+detail:'Calcul de l\'Indicateur d\'Accessibilité Potentielle Localisée (APL) à l\'échelle communale (DREES). Croisement avec les isochrones d\'accès aux urgences (15/30/45 min) via BD TOPO IGN et les projections de vieillissement par commune (INSEE OMPHALE). Indice de vulnérabilité sanitaire composite.',
+methodes:['APL (DREES)','Isochrones réseau','Projection OMPHALE','QGIS + pgRouting'],
+sources:[{n:'APL — Accessibilité Potentielle Localisée (DREES)',c:'open',u:'https://www.data.drees.sante.gouv.fr'},{n:'FINESS — localisation établissements',c:'open',u:'https://finess.sante.gouv.fr'},{n:'INSEE OMPHALE — projections population',c:'open',u:'https://www.insee.fr'}]},
+
+// ===== ÉNERGIE =====
+{id:16,cat:'energie',name:'Précarité énergétique & canicule',desc:'DPE F/G × revenus médians × exposition ICU × vagues de chaleur',icon:'ti-home-exclamation',dbs:['ademe','insee','copernicus'],cost:'open',
+why:'Les logements mal isolés (DPE F/G) surchauffent dangereusement lors des canicules. Ce croisement avec les revenus modestes identifie les ménages qui ne peuvent ni rénover ni climatiser : les plus exposés au risque létal. Il permet de prioriser les aides MaPrimeRénov\' et les interventions sociales d\'urgence canicule.',
+detail:'Extraction et agrégation de la base DPE nationale (ADEME) par IRIS. Croisement avec les revenus FiLoSoFi (INSEE) et les ICU calculés sur Sentinel-3. Surposition avec les données de sinistralité climatique (CCR). Cartographie de la précarité énergétique thermique estivale.',
+methodes:['Agrégation DPE par IRIS','Bivariée revenus/performance','LST croisée','Python + geopandas'],
+sources:[{n:'Base nationale DPE (ADEME)',c:'open',u:'https://data.ademe.fr'},{n:'FiLoSoFi — revenus par IRIS (INSEE)',c:'open',u:'https://www.insee.fr'},{n:'CCR — données sinistralité',c:'open',u:'https://www.ccr.fr'}]},
+
+{id:17,cat:'energie',name:'Potentiel éolien terrestre & contraintes',desc:'Vitesse du vent × zones protégées × distances réglementaires habitat',icon:'ti-wind',dbs:['meteofrance','ign','copernicus'],cost:'open',
+why:'La France a un potentiel éolien parmi les meilleurs d\'Europe mais 80% des projets font face à des recours. Cartographier le potentiel vent réel (données ERA5 + stations Météo-France) en soustrayant les zones d\'exclusion (Natura 2000, radar militaire, distances habitant) permet d\'identifier les zones d\'implantation optimales réduisant les conflits.',
+detail:'Interpolation de la vitesse vent à 100m (ERA5 Copernicus + réseau Météo-France) sur grille 1km². Soustraction des zones d\'exclusion : Natura 2000 (INPN), zones radars militaires (MinDef), tampon 500m habitat (BD TOPO). Calcul de la productible annuel (MWh/ha). Carte des zones d\'implantation sans contrainte.',
+methodes:['Interpolation ERA5','Analyse multicritère d\'exclusion','Calcul productible','QGIS + Python'],
+sources:[{n:'ERA5 — réanalyse atmosphérique (Copernicus)',c:'open',u:'https://cds.climate.copernicus.eu'},{n:'Natura 2000 (INPN / DREAL)',c:'open',u:'https://inpn.mnhn.fr'},{n:'BD TOPO IGN',c:'open',u:'https://geoservices.ign.fr'}]},
+
+{id:18,cat:'energie',name:'Vulnérabilité du réseau électrique',desc:'Lignes HTA/HTB × aléas climatiques (vent, verglas, chaleur) × densité de population desservie',icon:'ti-plug',dbs:['enedis','meteofrance','georisques'],cost:'open',
+why:'Les événements climatiques extrêmes causent 60% des interruptions d\'électricité en France (Enedis). Cartographier la co-exposition du réseau de transport avec les aléas (vents violents, verglas, crues) et pondérer par le nombre de clients desservis permet de prioriser l\'enfouissement des lignes et la résilience du réseau.',
+detail:'Croisement du tracé des lignes HTA/HTB (Enedis Open Data) avec les zones exposées aux vents >100km/h (Météo-France percentile 99), au verglas (gel/pluie) et aux inondations (AZI). Pondération par la population alimentée. Calcul d\'un score de criticité par tronçon.',
+methodes:['Buffer multi-aléas','Scoring criticité','Analyse réseau','QGIS + PostGIS'],
+sources:[{n:'Réseau électrique HTA/HTB (Enedis Open Data)',c:'open',u:'https://data.enedis.fr'},{n:'Vents extrêmes Météo-France',c:'open',u:'https://meteo.data.gouv.fr'},{n:'AZI — Atlas Zones Inondables',c:'open',u:'https://www.georisques.gouv.fr'}]},
+
+// ===== RISQUES =====
+{id:19,cat:'risque',name:'Feux de forêt & interface forêt-habitat',desc:'IFM × BD Forêt × urbanisation péri-forestière × projections climatiques 2050',icon:'ti-flame',dbs:['meteofrance','ign','georisques','corine'],cost:'open',
+why:'La France a connu ses plus grands feux depuis 40 ans en 2022 (72 000 ha). L\'extension du risque vers le nord (Gironde, Bretagne) est liée au changement climatique. Cartographier l\'interface forêt-habitat (zones WUI) combinée à l\'Indice Forêt Météo permet d\'identifier les communes en première ligne et de planifier les DFCI.',
+detail:'Extraction des zones WUI (Wildland-Urban Interface) par intersection BD Forêt IGN v2 et BD TOPO bâtiments avec un buffer 300m. Croisement avec les percentiles de l\'IFM (Indice Forêt Météo) Météo-France et les scénarios d\'extension DRIAS 2050. Cartographie des communes nouvellement exposées.',
+methodes:['Analyse WUI','IFM historique/projeté','Buffer 300m','FlamMap + QGIS'],
+sources:[{n:'BD Forêt IGN v2',c:'open',u:'https://geoservices.ign.fr'},{n:'Indice Forêt Météo (IFM)',c:'open',u:'https://meteo.data.gouv.fr'},{n:'BDIFF — Base de données incendies forêts',c:'open',u:'https://bdiff.agriculture.gouv.fr'}]},
+
+{id:20,cat:'risque',name:'Submersion marine & patrimoine côtier',desc:'Scénarios GIEC +1m/+2m × trait de côte × bâtiments remarquables et infrastructures',icon:'ti-waves',dbs:['ign','georisques','copernicus'],cost:'open',
+why:'3 millions de Français vivent sous le niveau centennal de la mer. Le recul du trait de côte s\'accélère. Croiser les scénarios de montée des eaux GIEC avec la cartographie fine des bâtiments, réseaux et patrimoine culturel côtier permet de chiffrer les enjeux exposés, d\'éclairer les décisions de repli stratégique et de prioriser les protections.',
+detail:'Simulation de submersion par seuillage du MNT LiDAR HD IGN (1m) aux niveaux +0.5/+1/+2m intégrant la surélévation due aux tempêtes (surcote centennale SHOM). Intersection avec BD TOPO (bâtiments, routes, réseaux), base Mérimée (patrimoine historique), données socio-économiques INSEE.',
+methodes:['Seuillage MNT LiDAR','Surcote SHOM','Intersection spatiale','SAGA GIS + QGIS'],
+sources:[{n:'MNT LiDAR HD IGN (1m)',c:'open',u:'https://geoservices.ign.fr'},{n:'HISTOLITT / trait de côte SHOM-IGN',c:'open',u:'https://data.shom.fr'},{n:'Mérimée — patrimoine (MinCulture)',c:'open',u:'https://www.data.gouv.fr'}]},
+
+{id:21,cat:'risque',name:'Retrait-gonflement argiles & bâti ancien',desc:'Carte aléa RGA × ancienneté bâtiments × sinistralité assurance',icon:'ti-home-off',dbs:['georisques','ign','insee'],cost:'open',
+why:'Le RGA a coûté 43 milliards € depuis 1989, dépassant les inondations. Les sécheresses plus fréquentes aggravent ce risque. Croiser la carte BRGM avec l\'âge du bâti (construit avant 1976, sans fondations adaptées) et les données de sinistralité CCR/MRN permet de cartographier les communes les plus exposées financièrement et humainement.',
+detail:'Jointure spatiale entre la carte d\'aléa RGA (BRGM, 4 niveaux) et les Fichiers Fonciers DGFiP (date de construction, type, surface). Croisement avec les données de sinistralité MRN (Mission Risques Naturels). Indice de vulnérabilité bâtimentaire RGA par commune.',
+methodes:['Jointure spatiale','Classification BRGM','Analyse sinistralité','QGIS + Python'],
+sources:[{n:'Carte aléa RGA (BRGM / GéoRisques)',c:'open',u:'https://www.georisques.gouv.fr'},{n:'Fichiers fonciers DGFiP (CEREMA)',c:'open',u:'https://datafoncier.cerema.fr'},{n:'Mission Risques Naturels (MRN)',c:'pay',u:'https://www.mrn.asso.fr'}]},
+
+{id:22,cat:'risque',name:'Cascade de risques en montagne',desc:'Permafrost × instabilité des versants × glaciers × infrastructures alpines',icon:'ti-mountain',dbs:['copernicus','ign','meteofrance'],cost:'open',
+why:'Le dégel du permafrost alpin déstabilise des versants jadis stables, causant des éboulements inédits (Chamounix 2023). Cartographier la distribution du permafrost (modèle thermique) avec les zones d\'instabilité connues (BRGM) et les infrastructures (routes, remontées mécaniques) permet d\'anticiper ces nouveaux risques émergents.',
+detail:'Modélisation de la distribution du permafrost (indice BTS + modèle de Boeckli) croisée avec le MNT IGN haute résolution et les températures de surface Copernicus. Superposition avec les mouvements de terrain historiques (BDMVT BRGM) et les infrastructures sensibles (BD TOPO).',
+methodes:['Modèle permafrost (BTS/Boeckli)','Analyse de stabilité','Croisement BDMVT','QGIS + Python'],
+sources:[{n:'BDMVT — mouvements de terrain (BRGM)',c:'open',u:'https://www.georisques.gouv.fr'},{n:'MNT RGE Alti 1m (IGN)',c:'open',u:'https://geoservices.ign.fr'},{n:'ERA5-Land températures de surface',c:'open',u:'https://cds.climate.copernicus.eu'}]},
+
+// ===== BIODIVERSITÉ =====
+{id:23,cat:'biodiversite',name:'Migration des espèces & corridors écologiques',desc:'Aires de distribution espèces × fragmentation paysage × scénarios climatiques 2050',icon:'ti-paw',dbs:['corine','copernicus','ign'],cost:'open',
+why:'Le changement climatique force les espèces à migrer vers le nord et en altitude. Cartographier les corridors actuels et leur état de fragmentation (routes, villes) en croisant avec les modèles de déplacement d\'espèces (SDM) permet d\'identifier les points critiques où restaurer la connectivité pour permettre l\'adaptation de la biodiversité.',
+detail:'Modèles de distribution d\'espèces (SDM/MaxEnt) basés sur les données GBIF pour 50 espèces bioindicatrices. Croisement avec l\'analyse de fragmentation Corine LC (MSPA). Cartographie des bottlenecks de corridor et projection du décalage entre habitats actuels et futurs.',
+methodes:['SDM MaxEnt','MSPA (GUIDOS)','Conefor connectivity','R + biomod2'],
+sources:[{n:'GBIF — observations biodiversité',c:'open',u:'https://www.gbif.org'},{n:'Corine Land Cover 2018',c:'open',u:'https://land.copernicus.eu'},{n:'INPN — inventaires espèces',c:'open',u:'https://inpn.mnhn.fr'}]},
+
+{id:24,cat:'biodiversite',name:'Acidification & réchauffement des cours d\'eau',desc:'Température eau × macroinvertébrés IBD × pression thermique centrale nucléaire',icon:'ti-fish',dbs:['sandre','meteofrance','copernicus'],cost:'open',
+why:'Les rivières françaises ont gagné 1.5°C depuis 1970, stressant les espèces d\'eau froide (saumon, truite). Les centrales nucléaires prélèvent et réchauffent l\'eau de refroidissement. Croiser la thermie des cours d\'eau avec les indices biologiques DCE et les températures d\'air permet de prévoir les zones où les écosystèmes aquatiques vont basculer.',
+detail:'Extraction des températures mesurées en stations SANDRE. Croisement avec les prélèvements thermiques des centrales (données ASN) et les températures air Météo-France. Corrélation avec les métriques biologiques (IBD, IBGN) DCE. Projection de la thermie sous DRIAS 2050.',
+methodes:['Analyse temporelle température','Régression linéaire','Croisement biologique DCE','R + ggplot2'],
+sources:[{n:'Températures cours d\'eau SANDRE',c:'open',u:'https://www.naiades.eaufrance.fr'},{n:'Données thermiques centrales ASN',c:'open',u:'https://www.asn.fr'},{n:'IBD/IBGN — indices biologiques SANDRE',c:'open',u:'https://www.naiades.eaufrance.fr'}]},
+
+{id:25,cat:'biodiversite',name:'Phénologie végétale & dérèglement saisonnier',desc:'Dates de feuillaison × températures printanières × pollinisateurs',icon:'ti-leaf',dbs:['copernicus','meteofrance','corine'],cost:'open',
+why:'La feuillaison avance de 2-6 jours par décennie, créant des désynchronisations entre plantes et pollinisateurs (déclin des abeilles, avifaune migratrice). Cartographier le dérèglement phénologique par type de végétation et territoire permet d\'identifier les écosystèmes les plus perturbés et de guider les politiques de restauration écologique.',
+detail:'Extraction des indices phénologiques (SOS : Start Of Season) à partir des séries NDVI Sentinel-2/MODIS. Croisement avec les anomalies de température printanière (Météo-France). Corrélation avec les données pollinisateurs (Observatoire des Abeilles) et avifaune (STOC Mnhn).',
+methodes:['Détection SOS/EOS phénologie','TIMESAT','Corrélation phéno/température','Python + phenopy'],
+sources:[{n:'MODIS MOD13A2 NDVI (NASA/Copernicus)',c:'open',u:'https://lpdaac.usgs.gov'},{n:'STOC — oiseaux communs (MNHN)',c:'open',u:'https://www.mnhn.fr'},{n:'Observatoire des Pollinisateurs',c:'open',u:'https://www.observatoire-pollinisateurs.com'}]},
+
+// ===== URBAIN =====
+{id:26,cat:'urbain',name:'Végétalisation & déserts de fraîcheur',desc:'Couverture arborée × accessibilité piétonne 10 min × revenus par IRIS',icon:'ti-trees',dbs:['ign','copernicus','insee'],cost:'open',
+why:'L\'inégalité d\'accès aux espaces verts en ville est une injustice climatique : les quartiers populaires ont en moyenne 3x moins de végétation que les quartiers aisés. Ce croisement permet de prouver et cartographier ces inégalités, de guider les plans de végétalisation et d\'évaluer l\'efficacité des politiques de rafraîchissement urbain.',
+detail:'Calcul de la canopée urbaine par détection NDVI + LiDAR (hauteur végétation) à l\'IRIS. Isochrones piétons 10 min vers espaces verts >0.5 ha (BD TOPO). Croisement avec revenus FiLoSoFi. Indice d\'inégalité verte par quartier.',
+methodes:['Détection canopée LiDAR','Isochrones piétons (GTFS+OSM)','Analyse d\'inégalité','QGIS + Python'],
+sources:[{n:'LiDAR HD IGN (classification végétation)',c:'open',u:'https://geoservices.ign.fr'},{n:'BD TOPO espaces verts (IGN)',c:'open',u:'https://geoservices.ign.fr'},{n:'FiLoSoFi revenus par IRIS (INSEE)',c:'open',u:'https://www.insee.fr'}]},
+
+{id:27,cat:'urbain',name:'Imperméabilisation & ruissellement pluvial',desc:'Coefficient d\'imperméabilisation × intensité pluies extrêmes × réseaux pluviaux',icon:'ti-cloud-rain',dbs:['ign','meteofrance','corine'],cost:'open',
+why:'La bétonisation aggrave les inondations pluviales urbaines : un mm de pluie sur du béton génère 10x plus de ruissellement que sur un sol naturel. Cartographier l\'imperméabilisation (LiDAR + Corine) croisée avec les intensités de pluies extrêmes (Météo-France IDF) permet de dimensionner les solutions de désimperméabilisation et les noues.',
+detail:'Calcul du coefficient d\'imperméabilisation par pixel (LiDAR + Sentinel-2) agrégé par IRIS et par bassin versant pluvial. Croisement avec les courbes Intensité-Durée-Fréquence (IDF) Météo-France pour T=10/100 ans. Modélisation du volume de ruissellement généré. Identification des zones critiques.',
+methodes:['Classification LiDAR','Courbes IDF Météo-France','Modèle ruissellement SCS-CN','SWMM + QGIS'],
+sources:[{n:'LiDAR HD IGN',c:'open',u:'https://geoservices.ign.fr'},{n:'Courbes IDF Météo-France',c:'open',u:'https://meteo.data.gouv.fr'},{n:'BD TOPO IGN (réseaux)',c:'open',u:'https://geoservices.ign.fr'}]},
+
+{id:28,cat:'urbain',name:'Rénovation énergétique & GES urbains',desc:'DPE par îlot × émissions CO₂ × potentiel économies × revenus',icon:'ti-building',dbs:['ademe','enedis','insee'],cost:'open',
+why:'Le bâtiment représente 25% des émissions françaises. Les 5 millions de passoires thermiques (DPE F/G) sont concentrées dans certains quartiers. Cartographier le potentiel de réduction GES de la rénovation, en le croisant avec les revenus disponibles et les aides accessibles, permet de territorialiser les politiques MaPrimeRénov\' et les CEE.',
+detail:'Agrégation de la base DPE ADEME par îlot. Croisement avec les consommations Enedis (par IRIS) et les émissions GES estimées. Calcul du potentiel d\'économies par rénovation BBC. Croisement avec les revenus FiLoSoFi pour évaluer le besoin d\'aides publiques par territoire.',
+methodes:['Agrégation DPE','Calcul potentiel économie','Analyse revenus/besoins','Python + geopandas'],
+sources:[{n:'Base DPE nationale (ADEME)',c:'open',u:'https://data.ademe.fr'},{n:'Consommations électricité Enedis par IRIS',c:'open',u:'https://data.enedis.fr'},{n:'FiLoSoFi INSEE',c:'open',u:'https://www.insee.fr'}]},
+
+// ===== FORÊT =====
+{id:29,cat:'foret',name:'Dépérissement forestier & sécheresse',desc:'Détection anomalie NDVI forêts × bilan hydrique × cartographie des essences',icon:'ti-trees',dbs:['copernicus','meteofrance','ign'],cost:'open',
+why:'Les épicéas ont perdu 41% de leur surface en France en 5 ans (sécheresses + scolytes). Le chêne pédonculé dépérit sur le pourtour méditerranéen. Cartographier les dépérissements en temps quasi-réel par essence (BD Forêt + Sentinel-2) permet d\'alerter les gestionnaires, de quantifier les pertes et d\'orienter la sylviculture d\'adaptation.',
+detail:'Détection des zones de dépérissement par anomalie NDVI et Red-Edge (Sentinel-2) sur les peuplements BD Forêt IGN v2. Croisement avec le bilan hydrique climatique Météo-France (ETP-P) et les données de signalements DSF (Département de la Santé des Forêts). Cartographie dynamique du dépérissement.',
+methodes:['Détection anomalie Sentinel-2','Indice Red-Edge','Bilan hydrique','Google Earth Engine + QGIS'],
+sources:[{n:'BD Forêt IGN v2',c:'open',u:'https://geoservices.ign.fr'},{n:'Département Santé des Forêts (DSF)',c:'open',u:'https://agriculture.gouv.fr'},{n:'Sentinel-2 MSI (Copernicus/Theia)',c:'open',u:'https://www.theia-land.fr'}]},
+
+{id:30,cat:'foret',name:'Stockage carbone forestier',desc:'Biomasse aérienne × croissance × perturbations (coupes, tempêtes, incendies)',icon:'ti-trees',dbs:['ign','copernicus','meteofrance'],cost:'open',
+why:'Les forêts françaises absorbent 55 Mt CO₂/an (15% des émissions nationales). Mais la sécheresse réduit cette absorption et les mégafeux la transforment en source. Cartographier précisément les stocks et flux de carbone forestier par massif est essentiel pour la comptabilité GES nationale et les politiques de compensation carbone.',
+detail:'Estimation de la biomasse aérienne (AGB) par croisement BD Forêt IGN + données IFN (Inventaire Forestier National) + imagerie Sentinel-1 (radar) et Sentinel-2. Calcul des stocks carbone par essence et région. Intégration des perturbations (BDIFF, tempêtes) pour le bilan net.',
+methodes:['Modèle AGB allométrique','SAR Sentinel-1','IFN sampling','Python + sklearn'],
+sources:[{n:'Inventaire Forestier National (IFN / IGN)',c:'open',u:'https://inventaire-forestier.ign.fr'},{n:'Sentinel-1 SAR (Copernicus)',c:'open',u:'https://scihub.copernicus.eu'},{n:'BDIFF — incendies forêts',c:'open',u:'https://bdiff.agriculture.gouv.fr'}]},
+
+{id:31,cat:'foret',name:'Adaptation sylvicole au futur climat',desc:'Projections climatiques 2050 × exigences des essences × zones d\'inadaptation future',icon:'ti-seeding',dbs:['meteofrance','ign','copernicus'],cost:'open',
+why:'80% des forêts françaises actuelles pourraient être hors de l\'enveloppe climatique de leurs essences dominantes en 2100. Cartographier les zones d\'inadaptation future (là où le chêne sessile sera stressé, où l\'épicéa mourra) permet de guider les décisions de renouvellement avec des essences mieux adaptées (REGEFOR).',
+detail:'Croisement des exigences climatiques des 20 essences principales (ANOVA sylvicole) avec les projections DRIAS 2050/2070 interpolées sur grille 1km². Identification des zones où l\'essence actuelle sera hors de sa niche thermique. Carte des essences de substitution recommandées.',
+methodes:['Modèle niche climatique','Projections DRIAS','Arbre de décision sylvicole','R + terra + dismo'],
+sources:[{n:'Projections climatiques DRIAS 2050/2070',c:'open',u:'https://www.drias-climat.fr'},{n:'BD Forêt IGN v2',c:'open',u:'https://geoservices.ign.fr'},{n:'Référentiel REGEFOR (INRAE/ONF)',c:'open',u:'https://regefor.inrae.fr'}]},
+
+// ===== EAU (suite) =====
+{id:32,cat:'eau',name:'Inégalités d\'accès à l\'eau potable',desc:'Qualité AEP × tarification × fuites réseaux × zones rurales isolées',icon:'ti-droplet',dbs:['sandre','insee','ign'],cost:'open',
+why:'13% des Français consomment une eau qui dépasse occasionnellement les limites réglementaires. Les petites communes rurales ont souvent des réseaux vétustes et des ressources menacées par la sécheresse. Ce croisement révèle les inégalités territoriales d\'accès à une eau potable de qualité et les zones prioritaires de modernisation.',
+detail:'Croisement des données de conformité AEP (SISE-Eaux / Ministère Santé) avec les taux de fuite des réseaux (enquêtes SISPEA/ONEMA), les prix de l\'eau et les projections de ressource sous changement climatique. Agrégation à la commune et par type de réseau.',
+methodes:['Jointure communale','Analyse conformité','Indicateurs SISPEA','QGIS + Python'],
+sources:[{n:'SISE-Eaux — qualité eau potable',c:'open',u:'https://www.data.gouv.fr'},{n:'SISPEA — service eau assainissement',c:'open',u:'https://www.services.eaufrance.fr'},{n:'Recensement INSEE',c:'open',u:'https://www.insee.fr'}]},
+
+// ===== TRANSPORT (suite) =====
+{id:33,cat:'transport',name:'Qualité de l\'air × densité trafic urbain',desc:'Concentrations NO₂/PM2.5 × TMJA × ZFE × santé population',icon:'ti-wind',dbs:['airparif','ign','sante'],cost:'open',
+why:'La pollution de l\'air cause 40 000 morts prématurées par an en France, dont une grande partie due au trafic routier. Croiser les concentrations modélisées (AtmoFrance) avec le trafic routier et les données de santé (hospitalisations respiratoires) permet d\'évaluer l\'impact sanitaire du trafic et d\'argumenter les ZFE et les plans de mobilité douce.',
+detail:'Croisement des cartes de concentration NO₂/PM2.5 (modèles dispersion AtmoFrance) avec le TMJA par type de véhicule (CEREMA) et les données OSCOUR d\'admissions aux urgences pour pathologies respiratoires et cardiovasculaires. Analyse géo-statistique de la relation exposition-effet.',
+methodes:['Modèle dispersion AtmoFrance','Krigeage concentrations','Analyse exposition-effet','Python + statsmodels'],
+sources:[{n:'Cartes pollution AtmoFrance (réseau ATMO)',c:'open',u:'https://www.atmo-france.org'},{n:'OSCOUR — urgences hospitalières',c:'open',u:'https://www.santepubliquefrance.fr'},{n:'TMJA CEREMA — trafic routier',c:'open',u:'https://www.cerema.fr'}]},
+
+// ===== BIODIVERSITÉ (suite) =====
+{id:34,cat:'biodiversite',name:'Récif coralien & blanchissement (DOM-TOM)',desc:'Température surface mer × événements blanchissement × Aires Marines Protégées',icon:'ti-fish',dbs:['copernicus','sante','ign'],cost:'open',
+why:'Les récifs coralliens des DOM-TOM français (Polynésie, Nouvelle-Calédonie, Antilles) subissent des épisodes massifs de blanchissement liés à la hausse des températures marines. Croiser la SST (Sea Surface Temperature) avec les événements de blanchissement documentés et les AMP permet d\'évaluer l\'efficacité de la protection et de prévoir les menaces.',
+detail:'Extraction de la SST Copernicus (CMEMS) sur les zones récifales françaises outremer. Détection des anomalies thermiques DHW (Degree Heating Weeks, méthode NOAA Coral Reef Watch). Croisement avec les inventaires récifaux et les limites AMP. Prévision des épisodes de blanchissement futurs.',
+methodes:['SST CMEMS/Copernicus','DHW NOAA CRW','Modèle thermique coraux','Python + xarray'],
+sources:[{n:'CMEMS — Sea Surface Temperature',c:'open',u:'https://marine.copernicus.eu'},{n:'NOAA Coral Reef Watch',c:'open',u:'https://coralreefwatch.noaa.gov'},{n:'Aires Marines Protégées (AAMP)',c:'open',u:'https://www.aires-marines.fr'}]},
+
+// ===== ÉNERGIE (suite) =====
+{id:35,cat:'energie',name:'Hydroélectricité & étiages climatiques',desc:'Débits historiques HYDRO × production hydroélectrique × scénarios sécheresse 2050',icon:'ti-droplet-half',dbs:['sandre','meteofrance','enedis'],cost:'open',
+why:'L\'hydroélectricité fournit 12% de l\'électricité française mais dépend directement des débits. Les sécheresses de 2022 ont réduit la production hydro de 25%. Cartographier la vulnérabilité des ouvrages par bassin versant aux étiages futurs (DRIAS) permet d\'anticiper les déficits de production et de planifier les complémentarités avec solaire et éolien.',
+detail:'Croisement des débits HYDRO (stations DREAL) avec les caractéristiques des ouvrages hydroélectriques (ROE, puissance installée) par bassin versant. Simulation des productibles sous scénarios DRIAS (étiage +20/40%). Carte de vulnérabilité de la capacité hydro installée.',
+methodes:['Analyse hydrologique','Modèle débit-production','Scénarios DRIAS','HEC-HMS + Python'],
+sources:[{n:'Base HYDRO (débits)',c:'open',u:'https://hydro.eaufrance.fr'},{n:'ROE — Référentiel des obstacles à l\'écoulement',c:'open',u:'https://www.sandre.eaufrance.fr'},{n:'Projections DRIAS sécheresse',c:'open',u:'https://www.drias-eau.fr'}]},
+];
+
+let fCat='all', fDb='all', selId=null;
+
+function setFilter(c,btn){fCat=c;document.querySelectorAll('.f-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');selId=null;render();}
+function setDb(d,btn){fDb=d;document.querySelectorAll('.db-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');selId=null;render();}
+function resetDb(){fDb='all';document.querySelectorAll('.db-btn').forEach(b=>b.classList.remove('active'));selId=null;render();}
+function selCard(id){selId=selId===id?null:id;render();}
+
+function costBadge(c){
+  if(c==='open')return'<span class="badge open-badge">open data</span>';
+  if(c==='pay')return'<span class="badge pay-badge">payant</span>';
+  return'<span class="badge mixed-badge">mixte</span>';
+}
+function srcCostBadge(c){
+  if(c==='open')return'<span class="src-cost open-badge badge">open</span>';
+  if(c==='pay')return'<span class="src-cost pay-badge badge">payant</span>';
+  return'<span class="src-cost mixed-badge badge">mixte</span>';
+}
+
+function render(){
+  const filtered=DATA.filter(d=>{
+    const mc=fCat==='all'||d.cat===fCat;
+    const md=fDb==='all'||d.dbs.includes(fDb);
+    return mc&&md;
+  });
+  const CAT={all:'Toutes les productions cartographiques',eau:'Eau & hydrologie',transport:'Transport & mobilité',agriculture:'Agriculture & alimentation',sante:'Santé & société',energie:'Énergie & transition',risque:'Risques naturels',biodiversite:'Biodiversité',urbain:'Urbanisme & ville',foret:'Forêt & sylviculture'};
+  document.getElementById('sec-title').textContent=CAT[fCat]+(fDb!=='all'?' · '+DB_LABELS[fDb]:'');
+  document.getElementById('sec-badge').textContent=`${filtered.length} carte${filtered.length>1?'s':''}`;
+  document.getElementById('s-shown').textContent=filtered.length;
+  document.getElementById('hdr-count').textContent=`${filtered.length} production${filtered.length>1?'s':''}`;
+
+  const grid=document.getElementById('grid');
+  if(!filtered.length){
+    grid.innerHTML='<div class="empty"><i class="ti ti-map-off"></i><p>Aucune carte pour cette combinaison.</p></div>';
+    document.getElementById('detail').innerHTML='';return;
+  }
+  grid.innerHTML=filtered.map(d=>`
+    <div class="card ${selId===d.id?'sel':''}" onclick="selCard(${d.id})">
+      <div class="card-top">
+        <div class="card-ico" style="background:${DOM_BG[d.cat]}"><i class="ti ${d.icon}" style="color:${DOM_COLORS[d.cat]}"></i></div>
+        <div class="card-badges">
+          <span class="badge" style="background:${DOM_BG[d.cat]};color:${DOM_COLORS[d.cat]}">${DOM_LABELS[d.cat]}</span>
+          ${costBadge(d.cost)}
+        </div>
+      </div>
+      <div class="card-name">${d.name}</div>
+      <div class="card-desc">${d.desc}</div>
+      <div class="card-tags">${d.dbs.map(db=>`<span class="card-tag">${DB_LABELS[db]}</span>`).join('')}</div>
+    </div>`).join('');
+
+  renderDetail();
+}
+
+function renderDetail(){
+  const panel=document.getElementById('detail');
+  if(!selId){panel.innerHTML='';return;}
+  const d=DATA.find(x=>x.id===selId);
+  if(!d){panel.innerHTML='';return;}
+  panel.innerHTML=`
+    <div class="detail">
+      <div class="detail-hdr">
+        <div class="detail-ico" style="background:${DOM_BG[d.cat]}"><i class="ti ${d.icon}" style="color:${DOM_COLORS[d.cat]}"></i></div>
+        <div>
+          <div class="detail-title">${d.name}</div>
+          <div class="detail-sub">${d.desc} &nbsp;·&nbsp; <span style="color:${DOM_COLORS[d.cat]}">${DOM_LABELS[d.cat]}</span></div>
+        </div>
+      </div>
+      <div class="detail-body">
+        <div class="detail-col">
+          <div class="why-box">
+            <div class="detail-lbl"><i class="ti ti-bulb" style="font-size:11px;vertical-align:-1px"></i> &nbsp;Pourquoi ce croisement ?</div>
+            <div class="why-text">${d.why}</div>
+          </div>
+          <div class="detail-lbl">Méthodologie</div>
+          <div class="detail-text">${d.detail}</div>
+          <div class="detail-lbl">Outils & méthodes</div>
+          <div class="chips">${d.methodes.map(m=>`<span class="chip"><i class="ti ti-tool"></i>${m}</span>`).join('')}</div>
+        </div>
+        <div class="detail-col">
+          <div class="detail-lbl">Bases de données sources</div>
+          <div>${d.sources.map(s=>`<div class="src-item">
+            <div class="src-name">${s.n}</div>
+            <div class="src-meta">
+              ${srcCostBadge(s.c)}
+              <a href="${s.u}" target="_blank" class="src-url">Accéder ↗</a>
+            </div>
+          </div>`).join('')}</div>
+        </div>
+      </div>
+      <div class="detail-footer">
+        <button class="btn-p" onclick="copyCard(${d.id})"><i class="ti ti-copy"></i>Copier la fiche</button>
+        <button class="btn-s" onclick="selCard(${d.id})"><i class="ti ti-x"></i>Fermer</button>
+      </div>
+    </div>`;
+}
+
+function copyCard(id){
+  const d=DATA.find(x=>x.id===id);
+  if(!d)return;
+  const t=`=== ${d.name} ===\nDomaine: ${DOM_LABELS[d.cat]}\n\nPourquoi ce croisement:\n${d.why}\n\nMéthodologie:\n${d.detail}\n\nMéthodes: ${d.methodes.join(', ')}\n\nSources:\n${d.sources.map(s=>`- ${s.n} [${s.c}] ${s.u}`).join('\n')}`;
+  navigator.clipboard.writeText(t).then(()=>{
+    const btn=document.querySelector('.btn-p');
+    if(btn){btn.innerHTML='<i class="ti ti-check"></i>Copié !';setTimeout(()=>{btn.innerHTML='<i class="ti ti-copy"></i>Copier la fiche';},2000);}
+  });
+}
+render();
+</script>
+</body>
+</html>
